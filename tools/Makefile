@@ -149,10 +149,10 @@ fortran_opt = $(shell gcc -v 2>&1 | perl -e '$$x = join(" ", <STDIN>); if($$x =~
 openblas_compiled:
 	echo "Note: see tools/Makefile for options regarding OpenBLAS compilation"
 	-git clone https://github.com/xianyi/OpenBLAS.git
-	-cd OpenBLAS; git pull
+	-cd OpenBLAS; git reset --hard HEAD; git pull
 	cd OpenBLAS; sed 's:# FCOMMON_OPT = -frecursive:FCOMMON_OPT = -frecursive:' < Makefile.rule >tmp && mv tmp Makefile.rule
 	# $(MAKE) PREFIX=`pwd`/OpenBLAS/install FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=1 NUM_THREADS=64 -C OpenBLAS all install
-	$(MAKE) PREFIX=`pwd`/OpenBLAS/install FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=0 -C OpenBLAS all install
+	$(MAKE) PREFIX=`pwd`/OpenBLAS/install FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=0 USE_LOCKING=1 -C OpenBLAS all install
 
 
 .PHONY: cub
