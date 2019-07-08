@@ -67,6 +67,10 @@ void DecodableNnetSimpleLoopedInfo::Init(
   frames_per_chunk = GetChunkSize(*nnet, opts.frame_subsampling_factor,
                                   opts.frames_per_chunk);
   output_dim = nnet->OutputDim("output");
+  if (opts.compute_config.compute_xent) {
+    KALDI_ASSERT(nnet->GetNodeIndex("output-xent") != -1 &&
+                 "Nnet must have output-xent if compute_xent option is set");
+  }
   KALDI_ASSERT(output_dim > 0);
   // note, ivector_period is hardcoded to the same as frames_per_chunk_.
   int32 ivector_period = frames_per_chunk;
@@ -81,6 +85,7 @@ void DecodableNnetSimpleLoopedInfo::Init(
                                  frames_left_context,
                                  frames_right_context,
                                  num_sequences,
+                                 opts.compute_config.compute_xent,
                                  &request1, &request2, &request3);
 
   CompileLooped(*nnet, opts.optimize_config, request1, request2, request3,

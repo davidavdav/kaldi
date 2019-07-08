@@ -81,8 +81,8 @@ class DecodableNnetLoopedOnlineBase: public DecodableInterface {
     return info_.opts.frame_subsampling_factor;
   }
   // Supply access to the loglikelihoods by row, for efficiency with pykaldi
-  void LogLikelihoods(int32 subsampled_frame, Vector<BaseFloat> *loglikes);
-  void LogLikelihoods(int32 subsampled_frame, int32 num_frames, Matrix<BaseFloat> *loglikes);
+  void LogLikelihoods(int32 subsampled_frame, bool get_xent, Vector<BaseFloat> *loglikes);
+  void LogLikelihoods(int32 subsampled_frame, int32 num_frames, bool get_xent, Matrix<BaseFloat> *loglikes);
 
 
  protected:
@@ -103,6 +103,8 @@ class DecodableNnetLoopedOnlineBase: public DecodableInterface {
   // The current log-posteriors that we got from the last time we
   // ran the computation.
   Matrix<BaseFloat> current_log_post_;
+  // xent-log-likes
+  Matrix<BaseFloat> current_xent_log_llh_;
 
   // The number of chunks we have computed so far.
   int32 num_chunks_computed_;

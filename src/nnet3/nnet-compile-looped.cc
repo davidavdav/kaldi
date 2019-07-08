@@ -116,6 +116,7 @@ static void CreateComputationRequestInternal(
     int32 num_sequences,
     int32 frame_subsampling_factor,
     const std::set<int32> &ivector_times,
+    bool compute_xent,
     ComputationRequest *request) {
   request->inputs.reserve(2);
   request->inputs.clear();
@@ -123,9 +124,13 @@ static void CreateComputationRequestInternal(
   request->inputs[0].name = "input";
   request->inputs[0].has_deriv = false;
   request->outputs.clear();
-  request->outputs.resize(1);
+  request->outputs.resize(1 + (compute_xent ? 1: 0));
   request->outputs[0].name = "output";
   request->outputs[0].has_deriv = false;
+  if (compute_xent) {
+    request->outputs[1].name = "output-xent";
+    request->outputs[1].has_deriv = false;
+  }
   if (!ivector_times.empty()) {
     request->inputs[1].name = "ivector";
     request->inputs[1].has_deriv = false;
@@ -142,8 +147,11 @@ static void CreateComputationRequestInternal(
     }
     for (int32 t = begin_output_t;
          t < end_output_t;
-         t += frame_subsampling_factor)
-      request->outputs[0].indexes.push_back(Index(n, t, x));
+         t += frame_subsampling_factor) {
+      for (int32 i = 0; i < request->outputs.size(); i++) {
+        request->outputs[i].indexes.push_back(Index(n, t, x));
+      }
+    }
   }
   if (!ivector_times.empty()) {
     request->inputs.resize(2);
@@ -168,6 +176,7 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
                                     int32 left_context_begin,
                                     int32 right_context,
                                     int32 num_sequences,
+                                    bool compute_xent,
                                     ComputationRequest *request1,
                                     ComputationRequest *request2,
                                     ComputationRequest *request3) {
@@ -195,14 +204,14 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
     for (int32 t = chunk2_input_begin_t; t < chunk2_input_end_t; t++) {
       int32 ivector_t = t - Mod(t, ivector_period);
       if (ivector_times2.count(ivector_t) == 0 &&
-	  ivector_times1.count(ivector_t) == 0)
+          ivector_times1.count(ivector_t) == 0)
         ivector_times2.insert(ivector_t);
     }
     for (int32 t = chunk3_input_begin_t; t < chunk3_input_end_t; t++) {
       int32 ivector_t = t - Mod(t, ivector_period);
       if (ivector_times3.count(ivector_t) == 0 &&
           ivector_times2.count(ivector_t) == 0 &&
-	  ivector_times1.count(ivector_t) == 0)
+          ivector_times1.count(ivector_t) == 0)
         ivector_times3.insert(ivector_t);
     }
   }
@@ -212,6 +221,7 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
       0, chunk_size,
       num_sequences, frame_subsampling_factor,
       ivector_times1,
+      compute_xent,
       request1);
 
   CreateComputationRequestInternal(
@@ -219,6 +229,7 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
       chunk_size, chunk_size * 2,
       num_sequences, frame_subsampling_factor,
       ivector_times2,
+      compute_xent,
       request2);
 
   CreateComputationRequestInternal(
@@ -226,6 +237,7 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
       chunk_size * 2, chunk_size * 3,
       num_sequences, frame_subsampling_factor,
       ivector_times3,
+      compute_xent,
       request3);
 
 }
@@ -375,6 +387,7 @@ void CreateLoopedComputationRequestSimple(const Nnet &nnet,
                                  ivector_period,
                                  extra_left_context_begin + left_context,
                                  extra_right_context + right_context,
+                                 false,
                                  num_sequences, request1, request2, request3);
 }
 

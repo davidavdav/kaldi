@@ -38,11 +38,15 @@ namespace nnet3 {
 
 struct NnetComputeOptions {
   bool debug;
-  NnetComputeOptions(): debug(false) { }
+  bool compute_xent;
+  NnetComputeOptions(): debug(false), compute_xent(false) { }
   void Register(OptionsItf *opts) {
     opts->Register("debug", &debug, "If true, turn on "
                    "debug for the neural net computation (very verbose!) "
                    "Will be turned on regardless if --verbose >= 5");
+    opts->Register("compute-xent", &compute_xent, "If true, compute "
+                   "the cross-entropy output of the nnet, as wel as "
+                   "the normal output");
   }
 
 };

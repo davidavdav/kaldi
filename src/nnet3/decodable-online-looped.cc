@@ -217,6 +217,12 @@ void DecodableNnetLoopedOnlineBase::AdvanceChunk() {
     output.Scale(info_.opts.acoustic_scale);
     current_log_post_.Resize(0, 0);
     current_log_post_.Swap(&output);
+    if (info_.opts.compute_config.compute_xent) {
+      CuMatrix<BaseFloat> output_xent;
+      computer_.GetOutputDestructive("output-xent", &output_xent);
+      current_xent_log_llh_.Resize(0, 0);
+      current_xent_log_llh_.Swap(&output_xent);
+    }
   }
   KALDI_ASSERT(current_log_post_.NumRows() == info_.frames_per_chunk /
                info_.opts.frame_subsampling_factor &&
@@ -240,19 +246,31 @@ BaseFloat DecodableNnetLoopedOnline::LogLikelihood(int32 subsampled_frame,
 
 // faster direct access to the loglikelihoods by row
 void DecodableNnetLoopedOnlineBase::LogLikelihoods(int32 subsampled_frame,
-						     Vector<BaseFloat> *loglikes) {
+                                                   bool get_xent,
+                                                   Vector<BaseFloat> *loglikes) {
+  if (get_xent) {
+    KALDI_ASSERT(info_.opts.compute_config.compute_xent &&
+                 "compute_xent flag must be set in compute options");
+  }
   EnsureFrameIsComputed(subsampled_frame);
-  loglikes->Resize(current_log_post_.NumCols());
-  loglikes->CopyFromVec(current_log_post_.Row(subsampled_frame - current_log_post_subsampled_offset_));
+  Matrix<BaseFloat> & source = get_xent ? current_xent_log_llh_ : current_log_post_;
+  loglikes->Resize(source.NumCols());
+  loglikes->CopyFromVec(source.Row(subsampled_frame - current_log_post_subsampled_offset_));
 }
 
 void DecodableNnetLoopedOnlineBase::LogLikelihoods(int32 subsampled_frame,
-						   int32 num_frames,
-						   Matrix<BaseFloat> *loglikes) {
+                                                   int32 num_frames,
+                                                   bool get_xent,
+                                                   Matrix<BaseFloat> *loglikes) {
   KALDI_ASSERT(num_frames > 0);
+  if (get_xent) {
+    KALDI_ASSERT(info_.opts.compute_config.compute_xent &&
+                 "compute_xent flag must be set in compute options");
+  }
   EnsureFrameIsComputed(subsampled_frame + num_frames - 1);
-  loglikes->Resize(num_frames, current_log_post_.NumCols());
-  loglikes->CopyFromMat(current_log_post_.RowRange(subsampled_frame - current_log_post_subsampled_offset_, num_frames));
+  Matrix<BaseFloat> & source = get_xent ? current_xent_log_llh_ : current_log_post_;
+  loglikes->Resize(num_frames, source.NumCols());
+  loglikes->CopyFromMat(source.RowRange(subsampled_frame - current_log_post_subsampled_offset_, num_frames));
 }
 
 

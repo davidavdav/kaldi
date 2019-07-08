@@ -166,6 +166,7 @@ void CreateLoopedComputationRequest(const Nnet &nnet,
                                     int32 left_context_begin,
                                     int32 right_context,
                                     int32 num_sequences,
+                                    bool compute_xent,
                                     ComputationRequest *request1,
                                     ComputationRequest *request2,
                                     ComputationRequest *request3);
