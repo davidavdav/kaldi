@@ -152,7 +152,7 @@ openblas_compiled:
 	-cd OpenBLAS; git reset --hard HEAD; git pull
 	cd OpenBLAS; sed 's:# FCOMMON_OPT = -frecursive:FCOMMON_OPT = -frecursive:' < Makefile.rule >tmp && mv tmp Makefile.rule
 	# $(MAKE) PREFIX=`pwd`/OpenBLAS/install FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=1 NUM_THREADS=64 -C OpenBLAS all install
-	$(MAKE) PREFIX=`pwd`/OpenBLAS/install FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=0 USE_LOCKING=1 -C OpenBLAS all install
+	$(MAKE) PREFIX=`pwd`/OpenBLAS/install DYNAMIC_ARCH=1 FC=gfortran $(fortran_opt) DEBUG=1 USE_THREAD=0 USE_LOCKING=1 -C OpenBLAS all install
 
 
 .PHONY: cub
