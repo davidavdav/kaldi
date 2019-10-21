@@ -7,6 +7,7 @@
 //                       Wei Shi;
 //                2015   Guoguo Chen
 //                2017   Daniel Galvez
+//                2019   Yiwen Shao
 
 // See ../../COPYING for clarification regarding multiple authors
 //
@@ -123,6 +124,16 @@ class VectorBase {
   template<typename OtherReal>
   void CopyFromVec(const CuVectorBase<OtherReal> &v);
 
+  /// Applies floor to all elements. Returns number of elements
+  /// floored in floored_count if it is non-null.
+  void Floor(const VectorBase<Real> &v, Real floor_val, MatrixIndexT *floored_count = nullptr);
+
+  /// Applies ceiling to all elements. Returns number of elements
+  /// changed in ceiled_count if it is non-null.
+  void Ceiling(const VectorBase<Real> &v, Real ceil_val, MatrixIndexT *ceiled_count = nullptr);
+
+  void Pow(const VectorBase<Real> &v, Real power);
+
   /// Apply natural log to all elements.  Throw if any element of
   /// the vector is negative (but doesn't complain about zero; the
   /// log will be -infinity
@@ -139,11 +150,15 @@ class VectorBase {
 
   /// Applies floor to all elements. Returns number of elements
   /// floored in floored_count if it is non-null.
-  void ApplyFloor(Real floor_val, MatrixIndexT *floored_count = nullptr);
+  inline void ApplyFloor(Real floor_val, MatrixIndexT *floored_count = nullptr) {
+    this->Floor(*this, floor_val, floored_count);
+  };
 
   /// Applies ceiling to all elements. Returns number of elements
   /// changed in ceiled_count if it is non-null.
-  void ApplyCeiling(Real ceil_val, MatrixIndexT *ceiled_count = nullptr);
+  inline void ApplyCeiling(Real ceil_val, MatrixIndexT *ceiled_count = nullptr) {
+    this->Ceiling(*this, ceil_val, ceiled_count);
+  };
 
   /// Applies floor to all elements. Returns number of elements floored.
   MatrixIndexT ApplyFloor(const VectorBase<Real> &floor_vec);
@@ -165,7 +180,9 @@ class VectorBase {
   void Sigmoid(const VectorBase<Real> &src);
 
   /// Take all  elements of vector to a power.
-  void ApplyPow(Real power);
+  inline void ApplyPow(Real power) {
+    this->Pow(*this, power);
+  };
 
   /// Take the absolute value of all elements of a vector to a power.
   /// Include the sign of the input element if include_sign == true.
@@ -222,9 +239,9 @@ class VectorBase {
   /// Set each element to y = (x == orig ? changed : x).
   void ReplaceValue(Real orig, Real changed);
 
-  /// Multipy element-by-element by another vector.
+  /// Multiply element-by-element by another vector.
   void MulElements(const VectorBase<Real> &v);
-  /// Multipy element-by-element by another vector of different type.
+  /// Multiply element-by-element by another vector of different type.
   template<typename OtherReal>
   typename std::enable_if<!std::is_same<OtherReal,Real>::value>::type
   MulElements(const VectorBase<OtherReal> &v);
@@ -252,7 +269,7 @@ class VectorBase {
   /// Multiplies all elements by this constant.
   void Scale(Real alpha);
 
-  /// Multiplies this vector by lower-triangular marix:  *this <-- *this *M
+  /// Multiplies this vector by lower-triangular matrix:  *this <-- *this *M
   void MulTp(const TpMatrix<Real> &M, const MatrixTransposeType trans);
 
   /// If trans == kNoTrans, solves M x = b, where b is the value of *this at input
@@ -350,7 +367,7 @@ class VectorBase {
 
   /// Reads from C++ stream (option to add to existing contents).
   /// Throws exception on failure
-  void Read(std::istream & in, bool binary, bool add = false);
+  void Read(std::istream &in, bool binary, bool add = false);
 
   /// Writes to C++ stream (option to write in binary).
   void Write(std::ostream &Out, bool binary) const;
@@ -361,7 +378,7 @@ class VectorBase {
   friend class CuVector<Real>;
  protected:
   /// Destructor;  does not deallocate memory, this is handled by child classes.
-  /// This destructor is protected so this object so this object can only be
+  /// This destructor is protected so this object can only be
   /// deleted via a child.
   ~VectorBase() {}
 
@@ -446,7 +463,7 @@ class Vector: public VectorBase<Real> {
 
   /// Read function using C++ streams.  Can also add to existing contents
   /// of matrix.
-  void Read(std::istream & in, bool binary, bool add = false);
+  void Read(std::istream &in, bool binary, bool add = false);
 
   /// Set vector to a specified size (can be zero).
   /// The value of the new data depends on resize_type:
@@ -460,7 +477,7 @@ class Vector: public VectorBase<Real> {
   /// Remove one element and shifts later elements down.
   void RemoveElement(MatrixIndexT i);
 
-  /// Assignment operator, protected so it can only be used by std::vector
+  /// Assignment operator.
   Vector<Real> &operator = (const Vector<Real> &other) {
     Resize(other.Dim(), kUndefined);
     this->CopyFromVec(other);
@@ -526,7 +543,6 @@ class SubVector : public VectorBase<Real> {
     VectorBase<Real>::data_ = const_cast<Real*>(data);
     VectorBase<Real>::dim_   = length;
   }
-
 
   /// This operation does not preserve const-ness, so be careful.
   SubVector(const MatrixBase<Real> &matrix, MatrixIndexT row) {

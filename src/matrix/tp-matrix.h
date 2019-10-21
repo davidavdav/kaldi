@@ -47,9 +47,10 @@ class TpMatrix : public PackedMatrix<Real> {
   explicit TpMatrix(const CuTpMatrix<Real> &cu);
   
   
-  template<typename OtherReal, typename std::enable_if<!std::is_same<OtherReal, Real>::value>::type* = nullptr> explicit TpMatrix(const TpMatrix<OtherReal>& orig)
+  // pykaldi: template<typename OtherReal, typename std::enable_if<!std::is_same<OtherReal, Real>::value>::type* = nullptr> explicit TpMatrix(const TpMatrix<OtherReal>& orig)
+  template<typename OtherReal> explicit TpMatrix(const TpMatrix<OtherReal>& orig)
       : PackedMatrix<Real>(orig) {}
-  
+
   Real operator() (MatrixIndexT r, MatrixIndexT c) const {
     if (static_cast<UnsignedMatrixIndexT>(c) >
         static_cast<UnsignedMatrixIndexT>(r)) {
@@ -74,9 +75,9 @@ class TpMatrix : public PackedMatrix<Real> {
     return *(this->data_ + (r*(r+1)) / 2 + c);
     // Duplicating code from PackedMatrix.h
   }
-  // Note: Cholesky may throw std::runtime_error
+  // Note: Cholesky may throw KaldiFatalError.
   void Cholesky(const SpMatrix<Real>& orig);
-  
+
   void Invert();
 
   // Inverts in double precision.
@@ -99,7 +100,7 @@ class TpMatrix : public PackedMatrix<Real> {
 
   /// This is implemented in ../cudamatrix/cu-tp-matrix.cc
   void CopyFromMat(const CuTpMatrix<Real> &other);
-  
+
   /// CopyFromTp copies another triangular matrix into this one.
   void CopyFromTp(const TpMatrix<Real> &other) {
     PackedMatrix<Real>::CopyFromPacked(other);
@@ -132,4 +133,3 @@ class TpMatrix : public PackedMatrix<Real> {
 
 
 #endif
-
